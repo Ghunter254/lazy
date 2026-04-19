@@ -1,0 +1,19 @@
+import { betterAuth } from "better-auth";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { db } from "../db/index.js";
+
+export const auth = betterAuth({
+  database: drizzleAdapter(db, {
+    provider: "pg", // Postgres
+  }),
+
+  // Using email and password for the auth.
+  emailAndPassword: {
+    enabled: true,
+    autoSignIn: true, // Automatically sign in the user after registration.
+  },
+
+  advanced: {
+    cookiePrefix: "lazy",
+  },
+});
