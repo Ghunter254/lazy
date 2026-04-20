@@ -1,16 +1,63 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:16-alpine
-    container_name: custom-engine-db
+    container_name: lazy-engine-db
     restart: always
     environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=password123
-      - POSTGRES_DB=engine_db
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: engine_db
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d engine_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: lazy-engine-app
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    command: npx tsx watch src/index.ts
+
+  studio:
+    build: .
+    container_name: lazy-engine-studio
+    restart: always
+    ports:
+      - "4983:4983"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    command: npx drizzle-kit studio --host 0.0.0.0 --port 4983
+
+  migrate:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    command: npx drizzle-kit push
 
 volumes:
   pgdata:
+  node_modules:

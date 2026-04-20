@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { studentService } from "../services/student.service.js";
+import { studentService } from "./student.service.js";
 
 export const studentController = {
   async create(req: Request, res: Response) {

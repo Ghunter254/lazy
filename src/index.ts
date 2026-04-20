@@ -1,9 +1,9 @@
 import express from "express";
 import { toNodeHandler } from "better-auth/node";
-import { auth } from "./lib/auth.js";
-import studentRoutes from "./routes/student.routes.js";
+import studentRoutes from "./modules/student/student.routes.js";
 import { createServer } from "http";
-import { initSocket } from "./lib/socket.js";
+import { initSocket } from "./core/socket/socket.js";
+import { auth } from "./core/auth/auth.js";
 
 const app = express();
 

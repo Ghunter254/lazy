@@ -4,9 +4,15 @@
   "main": "index.ts",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "dev": "docker compose up --build",
+    "dev:down": "docker compose down",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down db",
+    "db:push": "docker compose exec app npx drizzle-kit push",
+    "db:generate": "docker compose exec app npx drizzle-kit generate",
+    "db:studio": "docker compose exec app npx drizzle-kit studio",
+    "build": "docker compose build app",
+    "start": "docker compose up app"
   },
   "keywords": [],
   "author": "",

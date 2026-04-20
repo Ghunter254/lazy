@@ -1,13 +1,13 @@
-import { repo } from "../db/repo.js";
+import { studentRepo } from "./student.repo.js";
 
 export const studentService = {
   async createProfile(userId: string, data: any) {
-    const existing = await repo.students.getByUserId(userId);
+    const existing = await studentRepo.getByUserId(userId);
     if (existing) {
       throw new Error("User already has an associated profile.");
     }
 
-    return await repo.students.create({
+    return await studentRepo.create({
       id: crypto.randomUUID(),
       userId,
       ...data,
@@ -15,10 +15,10 @@ export const studentService = {
   },
 
   async getProfile(userId: string) {
-    return await repo.students.getByUserId(userId);
+    return await studentRepo.getByUserId(userId);
   },
 
   async listAll() {
-    return await repo.students.list();
+    return await studentRepo.list();
   },
 };
