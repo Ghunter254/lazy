@@ -12,6 +12,9 @@ const io = initSocket(httpServer);
 
 app.use(express.json());
 
+// This gives you a lot of auth routes out of the box.
+// refer to better auth docs to see what you can and cannot do
+// https://better-auth.com/docs/authentication/email-password
 app.all("/api/auth/*path", toNodeHandler(auth));
 app.use("/api/students", studentRoutes);
 

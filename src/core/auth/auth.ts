@@ -16,9 +16,29 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: true, // Automatically sign in the user after registration.
+    requireEmailVerification: process.env.REQUIRE_EMAIL_VER === "true",
+  },
+
+  session: {
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
+    freshAge: 60 * 60 * 24,
+    deferSessionRefresh: true,
+
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 5,
+    },
+  },
+
+  user: {
+    deleteUser: {
+      enabled: true,
+    },
   },
 
   advanced: {
     cookiePrefix: "lazy",
+    useSecureCookies: process.env.NODE_ENV === "production",
   },
 });
