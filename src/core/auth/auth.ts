@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "../../infra/db/index.js";
 import { sendEmail } from "../mailer/mailer.service.js";
+import { admin } from "better-auth/plugins";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -76,4 +77,23 @@ export const auth = betterAuth({
     cookiePrefix: "lazy",
     useSecureCookies: process.env.NODE_ENV === "production",
   },
+
+  plugins: [
+    /**
+     * Admin plugin adds role-based access control to your application. It provides a simple way to manage user roles and permissions.
+     * The plugin unlocks the following endpoints:
+     * POST  /api/auth/admin/set-role          → assign role to a user
+     * POST  /api/auth/admin/ban-user          → ban with reason + expiry
+      POST  /api/auth/admin/unban-user        → lift a ban
+      POST  /api/auth/admin/impersonate-user  → sign in as another user
+      POST  /api/auth/admin/stop-impersonating
+      POST  /api/auth/admin/remove-user
+      GET   /api/auth/admin/list-users        → paginated user list
+     */
+
+    admin({
+      defaultRole: "user",
+      adminRoles: ["admin"],
+    }),
+  ],
 });
