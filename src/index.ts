@@ -4,6 +4,7 @@ import studentRoutes from "./modules/student/student.routes.js";
 import { createServer } from "http";
 import { initSocket } from "./core/socket/socket.js";
 import { auth } from "./core/auth/auth.js";
+import { sendEmail } from "./core/mailer/mailer.service.js";
 
 const app = express();
 
@@ -20,6 +21,19 @@ app.use("/api/students", studentRoutes);
 
 app.get("/", (req, res) => {
   res.send("Health check...");
+});
+
+app.post("/test/email", async (req, res) => {
+  try {
+    await sendEmail({
+      to: "otsyula6764@gmail.com",
+      subject: "Lazy mailer test",
+      text: "If you are reading this, the mailer works.",
+    });
+    res.json({ ok: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 httpServer.listen(3000, () => {
