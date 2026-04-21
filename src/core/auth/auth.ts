@@ -7,6 +7,11 @@ export const auth = betterAuth({
     provider: "pg", // Postgres
   }),
 
+  //  add cors origin to env for prod.
+  trustedOrigins: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",")
+    : [],
+
   // Using email and password for the auth.
   emailAndPassword: {
     enabled: true,
