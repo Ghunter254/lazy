@@ -1,16 +1,43 @@
 import { db } from "./index.js";
 import * as schema from "./schema.js";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { PgColumn, PgTable } from "drizzle-orm/pg-core";
 
 interface BaseTable extends PgTable {
   id: PgColumn<any>;
 }
 
+export interface PaginationOptions {
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginationResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 const createBaseRepo = <T extends BaseTable>(table: T) => ({
-  async list() {
-    // @ts-ignore
-    return await db.select().from(table);
+  async list(options: PaginationOptions = {}): Promise<PaginationResult<any>> {
+    const page = Math.max(1, options.page ?? 1);
+    const limit = Math.min(100, Math.max(1, options.limit ?? 20));
+    const offset = (page - 1) * limit;
+
+    const [data, countResult] = await Promise.all([
+      // @ts-ignore
+      db.select().from(table).limit(limit).offset(offset),
+      db
+        .select({ count: sql<number>`cast(count(*) as int)` })
+        .from(table as any),
+    ]);
+
+    const total = countResult[0] ? countResult[0].count : 0;
+    const totalPages = Math.ceil(total / limit);
+
+    return { data, total, page, limit, totalPages };
   },
 
   async getById(id: string) {
