@@ -54,7 +54,7 @@ services:
         condition: service_healthy
     env_file:
       - .env
-    command: npx drizzle-kit push
+    command: npx drizzle-kit migrate
 
 volumes:
   pgdata:

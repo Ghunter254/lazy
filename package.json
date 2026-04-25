@@ -10,6 +10,7 @@
     "db:down": "docker compose down db",
     "db:push": "docker compose exec app npx drizzle-kit push",
     "db:generate": "docker compose exec app npx drizzle-kit generate",
+    "db:migrate": "docker compose exec app npx drizzle-kit migrate",
     "db:studio": "docker compose exec app npx drizzle-kit studio",
     "build": "docker compose build app",
     "start": "docker compose up app"
