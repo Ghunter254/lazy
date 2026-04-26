@@ -1,6 +1,6 @@
 import { db } from "./index.js";
 import * as schema from "./schema.js";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, asc, desc, and } from "drizzle-orm";
 import { PgColumn, PgTable } from "drizzle-orm/pg-core";
 
 interface BaseTable extends PgTable {
