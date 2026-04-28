@@ -1,5 +1,10 @@
 # Lazy — Your Personal BaaS
 
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-blue?logo=docker)](https://docs.docker.com/compose/)
+[![Status](https://img.shields.io/badge/status-production--ready-green)](#)
+
 A lightweight, self-hosted Backend-as-a-Service you own completely. Built with **Express**, **Better Auth**, **Drizzle ORM**, **PostgreSQL**, and **Socket.io** — all wired together with Docker so any project can spin it up in minutes.
 
 > Think Appwrite or Supabase, but yours. No monthly bills, no vendor lock-in, no surprises.
@@ -20,6 +25,7 @@ A lightweight, self-hosted Backend-as-a-Service you own completely. Built with *
   - [Realtime](#realtime)
 - [Adding a New Module (Feature Guide)](#adding-a-new-module-feature-guide)
 - [API Reference](#api-reference)
+- [Production Deployment](#production-deployment)
 - [Contributing](#contributing)
 - [Roadmap](#roadmap)
 
@@ -103,7 +109,7 @@ That's it. You don't need to install Postgres, or any Node packages locally — 
 ### 1. Clone the repo
 
 ```bash
-git clone <repo-url> lazy
+git clone https://github.com/Ghunter254/lazy.git lazy
 cd lazy
 ```
 
@@ -114,6 +120,11 @@ cp .env.example .env
 ```
 
 Open `.env` and update the values if needed (the defaults work out of the box for local dev).
+
+> 🔐 **Security Note**: Before deploying to production, generate a new `BETTER_AUTH_SECRET`:
+> ```bash
+> openssl rand -base64 32
+> ```
 
 ### 3. Start everything
 
@@ -144,7 +155,7 @@ Copy `.env.example` to `.env`. The table below explains each variable.
 
 ```dotenv
 DATABASE_URL=postgresql://admin:password123@db:5432/engine_db
-BETTER_AUTH_SECRET=updfl3fKNWEINQjRg/uzdMIFowD0wdizcU+ymPIlsaE=
+BETTER_AUTH_SECRET=your-secret-here-generate-with-openssl
 BETTER_AUTH_URL=http://localhost:3000
 NODE_ENV=development
 ```
@@ -152,11 +163,11 @@ NODE_ENV=development
 | Variable | Description | Example |
 |---|---|---|
 | `DATABASE_URL` | Full Postgres connection string. Uses the `db` Docker service hostname. | `postgresql://admin:password123@db:5432/engine_db` |
-| `BETTER_AUTH_SECRET` | Random secret for signing auth tokens. Generate a new one for production. | Any long random string |
+| `BETTER_AUTH_SECRET` | Random secret for signing auth tokens. **Generate a new one for production** using `openssl rand -base64 32`. | Any long random string |
 | `BETTER_AUTH_URL` | The public URL of the API. Better Auth uses this for redirects. | `http://localhost:3000` |
 | `NODE_ENV` | Environment flag. Affects logging and certain behaviours. | `development` or `production` |
 
-> **Production note:** Never commit your real `.env`. Generate a new `BETTER_AUTH_SECRET` with `openssl rand -base64 32`.
+> ⚠️ **Production note**: Never commit your real `.env` file. Add it to `.gitignore` if not already present.
 
 ---
 
@@ -170,8 +181,9 @@ All scripts are run from the project root via `npm run <script>`.
 | `dev:down` | Stops and removes all containers |
 | `db:up` | Starts only the Postgres container |
 | `db:down` | Stops only the Postgres container |
-| `db:push` | Pushes schema changes directly to the DB (no migration files) |
+| `db:push` | Pushes schema changes directly to the DB (no migration files) — **dev only** |
 | `db:generate` | Generates SQL migration files from schema changes |
+| `db:migrate` | Runs pending migrations — **use in production** |
 | `db:studio` | Opens Drizzle Studio in the browser |
 | `build` | Rebuilds the app Docker image |
 | `start` | Starts the app container without rebuilding |
@@ -465,7 +477,7 @@ Your frontend will also automatically receive `posts:created`, `posts:updated`, 
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| GET | `/` | No | Health check |
+| GET | `/` | No | Health check — returns `{"status":"ok","timestamp":"..."}` |
 
 ### Auth (handled by Better Auth)
 
@@ -482,6 +494,66 @@ Your frontend will also automatically receive `posts:created`, `posts:updated`, 
 |---|---|---|---|
 | POST | `/api/students` | Yes | Create student profile |
 | GET | `/api/students/me` | Yes | Get own student profile |
+
+---
+
+## Production Deployment
+
+> ⚠️ **Do not use `db:push` in production** — it can cause data loss. Use migrations instead.
+
+### Production Checklist
+
+Before deploying Lazy to production, complete these steps:
+
+- [ ] **Generate secure secrets**
+  ```bash
+  # Better Auth secret
+  openssl rand -base64 32
+  ```
+- [ ] **Set environment variables**
+  ```dotenv
+  NODE_ENV=production
+  BETTER_AUTH_SECRET=your-new-secret-here
+  BETTER_AUTH_URL=https://your-domain.com
+  DATABASE_URL=postgresql://user:pass@your-db-host:5432/prod_db
+  ```
+- [ ] **Use migrations, not push**
+  ```bash
+  npm run db:generate   # Create migration files
+  npm run db:migrate    # Apply to production DB
+  ```
+- [ ] **Configure reverse proxy** (nginx/Caddy) for:
+  - SSL/TLS termination
+  - WebSocket upgrades (`/socket.io`)
+  - Rate limiting at the edge
+- [ ] **Enable Docker volume persistence** for PostgreSQL data
+- [ ] **Set up log aggregation** (e.g., Loki, Papertrail, or simple file rotation)
+- [ ] **Add health check monitoring** at `/` endpoint
+- [ ] **Restrict database access** to app container only (no public port exposure)
+
+### Production Docker Tips
+
+Consider using a multi-stage build for smaller images:
+
+```dockerfile
+# Dockerfile.prod (example)
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY package.json ./
+EXPOSE 3000
+CMD ["node", "dist/index.js"]
+```
+
+Update `docker-compose.yml` to reference `Dockerfile.prod` in production environments.
 
 ---
 
@@ -626,9 +698,12 @@ Pick one and claim it in the group chat so nobody doubles up.
 - [ ] Rate limiting
 - [ ] Audit logging
 - [ ] Production Docker config (multi-stage build, no tsx)
+- [ ] OpenAPI/Swagger documentation
+- [ ] Automated test suite + CI pipeline
 
 ---
 
 ## License
 
-ISC — use it, fork it, ship it.
+ISC — use it, fork it, ship it. See [LICENSE](LICENSE) for details.
+```
